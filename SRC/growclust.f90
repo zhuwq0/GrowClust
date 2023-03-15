@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! Copyright 2020 Daniel Trugman
+! Copyright 2022 Daniel Trugman
 !
 ! This file is part of GrowClust.
 !
@@ -80,7 +80,7 @@ program growclust
 ! variables to store xcor file data
    integer, dimension(npair0) :: idcusp11, idcusp22, index1, index2, iqq1, iqq2
    integer, dimension(ndif0) :: ipp
-   real, dimension(ndif0) :: rxcor, tdif, dist, selev
+   real, dimension(ndif0) :: rxcor, tdif, dist
    real(dp), dimension(ndif0) :: slat, slon
    !character (len=12), dimension(ndif0) :: stname
    character (len=5), dimension(ndif0) :: stname
@@ -121,7 +121,7 @@ program growclust
    integer, dimension(npair0) :: idcusp1100, idcusp2200
    integer, dimension(npair0) :: index100, index200, iqq100, iqq200
    integer, dimension(ndif0) :: ipp00
-   real, dimension(ndif0) :: rxcor00, tdif00, dist00, selev00
+   real, dimension(ndif0) :: rxcor00, tdif00, dist00
    real(dp), dimension(ndif0) :: slat00, slon00
 
 ! variables for resampling
@@ -315,7 +315,7 @@ program growclust
       tt_del0, tt_del1, tt_ddel, rmsmax, delmax, iponly, nboot, maxboot, nx0, nd0)
 
 ! call subroutine to check grow_params module for errors
-    call PARAM_CHECK(conparam, hshiftmax, vshiftmax, rmedmax, boxwid, nit, samp_type, irelonorm, vzmodel_type) 
+    call PARAM_CHECK(hshiftmax, vshiftmax, rmedmax, boxwid, nit, samp_type, irelonorm, vzmodel_type) 
     
      print *, '--------------------------------------------------'
      print *, ' '
@@ -379,7 +379,7 @@ program growclust
 
     ! READ_XCORDATA: Reads xcor data and associated station locations
     ! -- output event pair arrays: iqq1, iqq2, idcusp11, idcusp22, index1, index2
-    ! -- output tdif/phase arrays: stname, ipp, tdif, rxcor, dist, slat, slon, selev
+    ! -- output tdif/phase arrays: stname, ipp, tdif, rxcor, dist, slat, slon
     print *, ' '
     !print *, 'Reading xcor data...'
     call TIMER
@@ -387,7 +387,7 @@ program growclust
      qid2qnum, qlat, qlon, rmincut, rmin, delmax, rpsavgmin, iponly, ngoodmin, & 
      nsta, slnames, sllats, sllons, slelevs,slkeys, &
      npair, nk, iqq1, iqq2, idcusp11, idcusp22, index1, index2, &
-     stname, ipp, tdif, rxcor, dist, slat, slon, selev)
+     stname, ipp, tdif, rxcor, dist, slat, slon)
     call TIMER
      
   ! for robustness, final check to make sure nq, npair, nk are not too large (edit 11/2016)
@@ -428,7 +428,6 @@ program growclust
       ipp00(k) = ipp(k)
       slat00(k) = slat(k)
       slon00(k) = slon(k)
-      selev00(k) = selev(k)
       tdif00(k) = tdif(k)
       rxcor00(k) = rxcor(k)
       dist00(k) = dist(k)
@@ -603,7 +602,6 @@ program growclust
    write(16, '(a56, f6.2)') ' (max rms residual to join clusters): rmsmax =', rmsmax
    write (16, '(a56, i6)' ) ' (num. bootstrap uncertainty iterations): nboot =', nboot
    write(16, *) '**************** Auxiliary Run Parameters *******************'
-   write(16, '(a56, f6.4)') ' min connection fraction to join clusters: ', conparam 
    write(16, '(a56, f6.2)') ' max catalog dist to join clusters: ', distmax
    write(16, '(a56, f6.2)') ' max relocated dist to join clusters: ', distmax2
    write(16, '(a56, i6)') ' min number in cluster to apply shift test: ', nclustshiftmin
@@ -786,7 +784,6 @@ program growclust
         call RESAMPLE_FDATAVEC(rxcor00(1:nk), rxcor(1:nk), samp_vec(1:nk), nk)
         call RESAMPLE_DFDATAVEC(slon00(1:nk), slon(1:nk), samp_vec(1:nk), nk)
         call RESAMPLE_DFDATAVEC(slat00(1:nk), slat(1:nk), samp_vec(1:nk), nk)
-        !call RESAMPLE_FDATAVEC(selev00(1:nk), selev(1:nk), samp_vec(1:nk), nk) ! not currently used
    
        !------- compute event pair quality (similarity) factors for resampled data ------!
        iqmax = 0 
@@ -858,11 +855,6 @@ program growclust
       endif
       if (i == 0 .or. j == 0) cycle
       if (i == j) cycle
-      
-      ! pair centroid
-      qlat0 = (qlat(i) + qlat(j))/2.
-      qlon0 = (qlon(i) + qlon(j))/2.
-      qdep0 = (qdep(i) + qdep(j))/2. 
            
 ! already in same tree, no need to relocate, right?                                             
       if (index(i) == index(j)) then  
@@ -871,35 +863,12 @@ program growclust
                   
 !possibly combine two different existing trees, note that either or both trees can be single events         
       else     
-
-    ! first check to see how many good connections join clusters (if each tree has >1 event)
-         if (nbranch(index(i)) > 1 .and. nbranch(index(j)) > 1) then      
-            
-            ! find total number of pairs linking cluster
-            nconnect=0         
-            do k = 1, npair
-               if (rfactor(k) < 0.0) cycle             !**added to make robust            
-               if (ngood(k) < ngoodmin) cycle
-               ii = iqq1(k)     
-               jj = iqq2(k)
-               if ((index(ii) == index(i) .and. index(jj) == index(j)) .or. &
-                  (index(jj) == index(i) .and. index(ii) == index(j)) ) then
-                  nconnect = nconnect + 1
-               endif
-            enddo
          
-            ntot = nbranch(index(i))*nbranch(index(j))    !total possible number of connections (nbranch_i*nbranch_j)
-            frac = real(nconnect)/real(ntot) ! fraction of total
-            
-        ! if fraction too small --> not enough good connections (don't join clusters/relocate)
-            if (frac < conparam) then
-!               print *, 'not joining two clusters ', nconnect, ntot, frac
-               cycle                 
-            endif
-         end if
-         
-! then check to see if clusters are too far apart (recall the t-arrays are tree centroids)
-         cosqlat = cos(qlat0/degrad)
+! check to see if clusters are too far apart (recall the t-arrays are tree centroids)
+         qlat0 = (qlat(i) + qlat(j))/2.
+         qlon0 = (qlon(i) + qlon(j))/2.
+         qdep0 = (qdep(i) + qdep(j))/2. 
+         cosqlat = cos(qlat0/degrad) ! from pair centroid
          dy = (tlat(index(i)) - tlat(index(j)))*degkm
          dx = (tlon(index(i)) - tlon(index(j)))*degkm*cosqlat
          dz = tdep(index(i)) - tdep(index(j))
@@ -912,7 +881,7 @@ program growclust
          npr8 = 0           ! number of good pairs linking clusters
          npk8 = 0           ! total number of differential times for these pairs
          
-         ! loop over all observations (starting w/ best xcor results)
+         ! loop over all remaining observations (sorted by rxcor)
          do kraw8 = kraw, 1, -1
             ip8 = indxr(kraw8)
             if (rfactor(ip8) < 0.0) cycle       !***added to make robust            
@@ -1074,6 +1043,7 @@ program growclust
          cdep2 = (qdep1*nbranch_i + qdep2*nbranch_j)/real(nbranch_i + nbranch_j)
          
          ! if number events in cluster i is > nclustshiftmin, test if centroid moves too far
+         !  (accounting for possible DC offsets)
          if (nbranch_i >= nclustshiftmin) then
             dy = qlat1 - tlat(index(i)) - (clat2 - clat1)        !new loc - old loc
             dx = qlon1 - tlon(index(i)) - (clon2 - clon1)
@@ -1094,7 +1064,8 @@ program growclust
             
          endif
          
-         ! if number events in cluster j is > nclustshiftmin, test if centroid moves too far        
+         ! if number events in cluster j is > nclustshiftmin, test if centroid moves too far
+         !  (accounting for possible DC offsets)        
          if (nbranch_j >= nclustshiftmin) then
             dy = qlat2 - tlat(index(j)) - (clat2 - clat1)        !new loc - old loc
             dx = qlon2 - tlon(index(j)) - (clon2 - clon1)
@@ -1124,7 +1095,7 @@ program growclust
          qlat_off1 = qlat1 - tlat(index(i))         
          qlon_off1 = qlon1 - tlon(index(i))
          qdep_off1 = qdep1 - tdep(index(i))
-         qtim_off1 = torg(index(i)) - torgdif/2.     !***check this
+         qtim_off1 = torg(index(i)) - torgdif/2.     ! symmetric shift "backward" if positive
          if (abs(qtim_off1) > 50.) then
             print *, '***TIME ERROR6: ', qtim_off1, torg(index(i)), index(i), i
             print *, 'LARGE ORIGIN TIME CORRECTION, LIKELY XCOR DATA OR EVLIST PROBLEM.'
@@ -1136,7 +1107,7 @@ program growclust
          qlat_off2 = qlat2 - tlat(index(j))         !
          qlon_off2 = qlon2 - tlon(index(j))
          qdep_off2 = qdep2 - tdep(index(j))
-         qtim_off2 = torg(index(j)) + torgdif/2.     !***check this
+         qtim_off2 = torg(index(j)) + torgdif/2.     ! symmetric shift "forward" if positive
          if (abs(qtim_off2) > 50.) then
              print *, '***TIME ERROR7: ', qtim_off2, torg(index(j)), index(j), j
              print *, 'LARGE ORIGIN TIME CORRECTION, LIKELY XCOR DATA OR EVLIST PROBLEM.'
@@ -1484,8 +1455,8 @@ program growclust
             call GET_TT_FAST(ttab, deltab, deptab, ndel, ndep, &
                   ipp(k), distance, qdep(iq2), tsec2, iflag)
 
-            ! predicted differential time      
-            tdif_pred(k) = tsec2 - tsec1
+            ! predicted differential time (otime adjustment taken care of below)    
+            tdif_pred(k) = tsec2 - tsec1 
             
             ! check to see if this is a "good" pick
             if (dist(k) <= delmax .and. rxcor(k) >= rmin) then
@@ -1494,7 +1465,7 @@ program growclust
                 
                 ! store residual in P-residual array
                 jjP = jjP + 1
-                resP(jjP) = tdif(k)-tdif_pred(k)
+                resP(jjP) = tdif(k)-(qtim(iq2)-qtim(iq1))-tdif_pred(k) ! otime-adjusted (08/2021)
                 
                 npickgoodP = npickgoodP + 1  ! increment npickgood
                 prmsP = prmsP + (resP(jjP))**2 ! increment residual sum for the pair
@@ -1504,7 +1475,7 @@ program growclust
                 
                 ! store residual in P-residual array
                 jjS = jjS + 1
-                resS(jjS) = tdif(k)-tdif_pred(k)
+                resS(jjS) = tdif(k)-(qtim(iq2)-qtim(iq1))-tdif_pred(k) ! otime-adjusted (08/2021)
                 
                 npickgoodS = npickgoodS + 1  ! increment npickgood
                 prmsS = prmsS + (resS(jjS))**2 ! increment residual sum for the pair
@@ -1773,7 +1744,7 @@ endif
       
    do ii = 1, ntreeR
       if (nbranchtR(ii) < nbranch_min) cycle
-      write (13, 870) ii, nbranchtR(ii), tlatR(ii), tlonR(ii), tdepR(ii), torgR(ii)
+      write (13, 870) ii, nbranchtR(ii), tlatR(ii), tlonR(ii), tdepR(ii)-datum, torgR(ii) !08/2021 fixed datum adjustment
 870   format (i8, i8, f10.5, f11.5, f8.3, f8.3)
       do iq = 1, nq
       

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! Copyright 2020 Daniel Trugman
+! Copyright 2022 Daniel Trugman
 !
 ! This file is part of GrowClust.
 !
@@ -119,7 +119,7 @@
      input_ok = 0
    endif
 
-   ! travel time table size (hardwired to 501 x 201)
+   ! travel time table size
    ndel = floor((tt_del2+tt_del3/10.-tt_del1)/tt_del3) + 1
    ndep = floor((tt_dep2+tt_dep3/10.-tt_dep1)/tt_dep3) + 1
    if (ndel > nx0) then
@@ -178,8 +178,7 @@
 ! ****** later in the algorithm AND are not checked elsewhere. 
 ! ****** E.g., it's okay to have distmax < 0 ....)
 !------------------------------------------------------------------------------------
-!  Inputs:  conparam  =  minimum connection fraction to join clusters
-!           hshiftmax =  maximum permitted horizontal cluster shifts (km)
+!  Inputs:  hshiftmax =  maximum permitted horizontal cluster shifts (km)
 !           vshiftmax =  maximum permitted vertical cluster shifts (km)
 !           rmedmax   =  maximum median absolute tdif residual to join clusters          
 !           boxwid    =  initial "shrinking-box" width (km) in relative relocation subroutines
@@ -188,21 +187,14 @@
 !           irelonorm =  relocation norm (1=L1 norm, 2=L2 norm)
 !           vzmodel_type = velocity model type (1=flat earth, 2=radial)           
 !-----------------------------------------------------------------------------------------
-   subroutine PARAM_CHECK(conparam, hshiftmax, vshiftmax, rmedmax, boxwid, nit, samp_type, irelonorm, vzmodel_type)
+   subroutine PARAM_CHECK(hshiftmax, vshiftmax, rmedmax, boxwid, nit, samp_type, irelonorm, vzmodel_type)
      
    implicit none
-   real :: conparam, hshiftmax, vshiftmax, rmedmax, boxwid 
+   real :: hshiftmax, vshiftmax, rmedmax, boxwid 
    integer :: nit, samp_type, params_ok , irelonorm, vzmodel_type 
    
    print *, 'Checking grow_params.mod parameters...'
    params_ok = 1 ! input is ok unless problem is found
-     
-   ! check conparam
-   if ((conparam <= 0.0) .or. (conparam > 1.0) ) then
-     print *, 'grow_params.mod error: conparam'
-     print *, conparam
-     params_ok = 0
-   endif
    
    ! check hshiftmax, vshiftmax
    if ((hshiftmax <= 0.0) .or. (vshiftmax <= 0.0)) then 
@@ -346,7 +338,7 @@
     
     read (12, *, end=22) idcusp(i), qyr_cat(i), qmon_cat(i), qdy_cat(i), qhr_cat(i), & 
     qmn_cat(i), qsc_cat(i), qlat_cat(i), qlon_cat(i), qdep_cat(i), &
-    RMS_cat, EH_cat, qmag_cat(i)
+    RMS_cat, EH_cat, EZ_cat, qmag_cat(i)
     
     endif
     
@@ -556,7 +548,7 @@ end subroutine READ_STLIST
 !                         This is useful to quickly look up a station name
 !           slats     =  array(len=nsta) of station latitudes, sorted
 !           slons     =  array(len=nsta) of station longitudes, sorted
-!           selevs    =  array(len=nsta) of station elevations (m), soreted
+!           selevs    =  array(len=nsta) of station elevations (m), sorted
 !           
 !  Returns: slat      = station latitude corresponding to stname (-999 is no match)
 !           slon      = station longitude corresponding to stname (-999 is no match)
@@ -649,14 +641,13 @@ end subroutine LOOKUP_STA
 !           dist      =  array(len=nk) of average station distance for each tdif observation
 !           slat      =  array(len=nk) of station latitudes for each tdif observation
 !           slon      =  array(len=nk) of station longitudes for each tdif observation
-!           selev     =  array(len=nk) of station elevations for each tdif observation
 !-----------------------------------------------------------------------------------------
 
    subroutine READ_XCORDATA(irxform, it12form, xcorfile, npair0, ndif0, nq,  &
      max_qid, qid2qnum, qlat, qlon, rmincut, rmin_ngood, delmax, rpsavgmin,  &
      iponly, ngoodmin, nsta, slnames, sllats, sllons, slelevs, slkeys, &
      npair, nk, iqq1, iqq2, idcusp11, idcusp22, index1, index2, &
-     stname, ipp, tdif, rxcor, dist, slat, slon, selev)
+     stname, ipp, tdif, rxcor, dist, slat, slon)
     
     implicit none
     
@@ -675,15 +666,15 @@ end subroutine LOOKUP_STA
     real :: rps_pr, otc12
     real(dp) :: qlat0, qlon0, reflat0, cosreflat0, dx, dy
     integer, dimension(npair0) :: idcusp11, idcusp22, index1, index2, iqq1, iqq2
-    integer, dimension(npair0) :: idcusp11B, idcusp22B, index1B, index2B, iqq1B, iqq2B
-    integer, dimension(ndif0) :: ipp, ippB
+    integer, dimension(ndif0) :: ipp
     
-    real, dimension(ndif0) :: rxcor, tdif, dist, rxcorB, tdifB, distB
+    real, dimension(ndif0) :: rxcor, tdif, dist
     real(dp), dimension(nq) :: qlat, qlon
     real(dp), dimension(ndif0) :: slat, slon
-    real, dimension(ndif0) :: selev
+    !real, dimension(ndif0) :: selev
+    real :: selev ! no longer returning array
     character (len=100) :: xcorfile, linebuf
-    character (len=12), dimension(ndif0) :: stnameB
+    character (len=12), dimension(ndif0) :: stname12
     character (len=5), dimension(ndif0) :: stname
     character (len=10) :: stname_kk
     character (len=1) :: ippchar
@@ -782,12 +773,12 @@ end subroutine LOOKUP_STA
        endif
        
        ! next, read event-pair arrays (length npair)
-       read (14) iqq1B(1:npairB), iqq2B(1:npairB), idcusp11B(1:npairB), idcusp22B(1:npairB)
-       read (14) index1B(1:npairB), index2B(1:npairB)
+       read (14) iqq1(1:npairB), iqq2(1:npairB), idcusp11(1:npairB), idcusp22(1:npairB)
+       read (14) index1(1:npairB), index2(1:npairB)
        
        ! check maximum iqq1 and iqq2
-       iq1Bmax = maxval(iqq1B(1:npairB))
-       iq2Bmax = maxval(iqq2B(1:npairB))
+       iq1Bmax = maxval(iqq1(1:npairB))
+       iq2Bmax = maxval(iqq2(1:npairB))
        if (iq1Bmax > nq) then
          print *, 'Error! max iqq1 from binary file > nQ'
          print *, 'max(iqq1), nq: ', iq1Bmax, nq
@@ -807,7 +798,7 @@ end subroutine LOOKUP_STA
        ! finally, read xcor arrays (length nk)
             ! note that index1, index2 (above) map events to min/max indices in xcor arrays
             ! the stnames here are 12-char, we want the station name only
-       read (14) stnameB(1:nkB), ippB(1:nkB), tdifB(1:nkB), rxcorB(1:nkB), distB(1:nkB)
+       read (14) stname12(1:nkB), ipp(1:nkB), tdif(1:nkB), rxcor(1:nkB), dist(1:nkB)
        
        close (14)
        print *, 'Finished reading binary file: ' , xcorfile
@@ -835,8 +826,8 @@ end subroutine LOOKUP_STA
        do ip = 1, npairB
          
          ! indices in phase arrays for this pair
-         ix1 = index1B(ip)
-         ix2 = index2B(ip)
+         ix1 = index1(ip)
+         ix2 = index2(ip)
          
          if ((ix2 .eq. 0) .or. (ix1 > ix2)) cycle ! check for empty pair
     
@@ -851,21 +842,21 @@ end subroutine LOOKUP_STA
         !    (b) the tdif observation is "good" (dist <= delmax and rxcor >= rmin_ngood)
         do k = ix1, ix2
           
-          rps_pr = rps_pr + rxcorB(k)
+          rps_pr = rps_pr + rxcor(k)
           kk = kk + 1
           
-          if ((iponly == 1) .and. (ippB(k) .ne. 1)) then ! must be P if iponly == 1
+          if ((iponly == 1) .and. (ipp(k) .ne. 1)) then ! must be P if iponly == 1
             keepkk_pr(kk) = 0
             nk_cut = nk_cut + 1
             
-          elseif (rxcorB(k) < rmincut) then ! must have high enough rxcor value 
+          elseif (rxcor(k) < rmincut) then ! must have high enough rxcor value 
             keepkk_pr(kk) = 0
             nk_cut = nk_cut + 1
             
           else ! yep, keep it. Now test if it's "good"
             nkeep_pr = nkeep_pr + 1
             keepkk_pr(kk) = 1 
-            if ((distB(k) <= delmax) .and. (rxcorB(k) >= rmin_ngood)) then
+            if ((dist(k) <= delmax) .and. (rxcor(k) >= rmin_ngood)) then
              ngood_pr = ngood_pr + 1
             endif
             
@@ -879,10 +870,10 @@ end subroutine LOOKUP_STA
            
                ! yep, keep pair
                npair = npair + 1
-               iqq1(npair) = iqq1B(ip)
-               iqq2(npair) = iqq2B(ip)
-               idcusp11(npair) = idcusp11B(ip)
-               idcusp22(npair) = idcusp22B(ip)
+               iqq1(npair) = iqq1(ip)
+               iqq2(npair) = iqq2(ip)
+               idcusp11(npair) = idcusp11(ip)
+               idcusp22(npair) = idcusp22(ip)
            
                ! index1(npair) gives the start index for this pair in the tdif arrays
                k1 = k2 + 1 
@@ -894,12 +885,12 @@ end subroutine LOOKUP_STA
                 kk = kk + 1
                 if (keepkk_pr(kk)>0) then
                   k2 = k2 + 1
-                  rxcor(k2) = rxcorB(k)
-                  tdif(k2) = tdifB(k) ! note: sign convention should be ok b/c read from xcorbin file
-                  ipp(k2) = ippB(k)
-                  dist(k2) = distB(k)
+                  rxcor(k2) = rxcor(k)
+                  tdif(k2) = tdif(k) ! note: sign convention should be ok b/c read from xcorbin file
+                  ipp(k2) = ipp(k)
+                  dist(k2) = dist(k)
                   stname(k2) = '     '
-                  stname(k2)(1:5) = stnameB(k)(4:8) ! copy over station name only
+                  stname(k2)(1:5) = stname12(k)(4:8) ! copy over station name only
                  endif
               enddo
           
@@ -932,7 +923,7 @@ end subroutine LOOKUP_STA
     ! get station locations: Fast lookup with alphabetized stlist, added 07/2018
       do k = 1, nk
         call LOOKUP_STA(stname(k), nsta, slnames, slkeys, sllats, sllons, slelevs, &
-               slat(k), slon(k), selev(k))
+               slat(k), slon(k), selev)
         if (slat(k) < -99.) then
          print *,'ERROR: station not found, stname = ', stname(k)
          print *, 'Ending program: xcor data and station list inconsistent'
@@ -962,7 +953,7 @@ end subroutine LOOKUP_STA
      
      
      ! read file, line by line
-     do j = 1, ndif0
+     do j = 1, 2*ndif0 ! edit 08/2021 b/c not all lines are good tdifs...
       read(14, '(a100)', end=52) linebuf 
 
       if(linebuf(1:1) .eq. '#') then ! ------------ event pair line --------------
@@ -994,7 +985,7 @@ end subroutine LOOKUP_STA
               dist(k2) = dist_pr(k)
               slat(k2) = slat_pr(k)
               slon(k2) = slon_pr(k)
-              selev(k2) = selev_pr(k)
+              !selev(k2) = selev_pr(k)
               stname(k2)(1:5) = stname_pr(k)(1:5)
              endif
           enddo
@@ -1178,7 +1169,7 @@ end subroutine LOOKUP_STA
               dist(k2) = dist_pr(k)
               slat(k2) = slat_pr(k)
               slon(k2) = slon_pr(k)
-              selev(k2) = selev_pr(k)
+              !selev(k2) = selev_pr(k)
               stname(k2)(1:5) = stname_pr(k)(1:5)
              endif
           enddo

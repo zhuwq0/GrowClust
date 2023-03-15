@@ -16,9 +16,8 @@
   (min rxcor value for evpair similarity coeff.): rmin =  0.60
   (max sta. dist for evpair similarity coeff.): delmax =  80.0
            (max rms residual to join clusters): rmsmax =  0.20
-        (num. bootstrap uncertainty iterations): nboot =    10
+        (num. bootstrap uncertainty iterations): nboot =     0
  **************** Auxiliary Run Parameters *******************
-              min connection fraction to join clusters: 0.0010
                      max catalog dist to join clusters:   5.00
                    max relocated dist to join clusters:   3.00
              min number in cluster to apply shift test:      1
@@ -766,11 +765,11 @@
                            Number of event pairs used:      48430
                 Number of xcor data used (total, P+S):     559341
                    Number of xcor data used (P-phase):     315323
-             RMS differential time residual (P-phase):     0.1573
-   Mean (signed) differential time residual (P-phase):    -0.0172
+             RMS differential time residual (P-phase):     0.0708
+   Mean (signed) differential time residual (P-phase):    -0.0004
                    Number of xcor data used (S-phase):     244018
-             RMS differential time residual (S-phase):     0.1440
-   Mean (signed) differential time residual (S-phase):    -0.0132
+             RMS differential time residual (S-phase):     0.0244
+   Mean (signed) differential time residual (S-phase):     0.0009
   
                 Number of clusters with >=   2 events:         6
                 Number of clusters with >=   5 events:         2
