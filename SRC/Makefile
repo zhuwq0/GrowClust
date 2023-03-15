@@ -10,8 +10,9 @@ CMD = growclust
 #  (use -O for optimization)
 #  (use -O -mcmodel=medium or -O -mcmodel=large for large datasets)
 #  (use -fcheck=bounds for testing)
-CFLAGS = -O -mcmodel=medium
-#CFLAGS = -Wall -fcheck=bounds -mcmodel=medium
+#CFLAGS = -O
+CFLAGS = -O3 -mcmodel=large
+#CFLAGS = -Wall -fcheck=bounds
 
 # object files to link to command file
 OBJS  =  input_subs.o \

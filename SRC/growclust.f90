@@ -435,6 +435,7 @@ program growclust
       
       ! quality control checks on xcor data
       if (dist(k) > tt_del1) then
+          print *, slat(k), slon(k)
           print *, 'ERROR: STATION DISTANCE', dist(k), '> tt_del1', tt_del1
           print *, 'Check input files (evlist, stlist, xcordata) for errors or '
           print *, 'increase tt_del1 in GrowClust control (.inp) file.'
@@ -514,8 +515,8 @@ program growclust
         !ierror = 1 ! allow this, but warn user (should be ok if depth is near 0)
     endif
     if (max_qdep > tt_dep1) then ! note tt_dep1 is >= vzmax
-        print *, 'ERROR: max event depth > max table / velocity model depth'
-        ierror = 1 ! don't allow this
+        print *, 'WARNING: max event depth > max table / velocity model depth'
+        !ierror = 1 ! don't allow this
     endif
     if (tt_dep0 < vzmin) then ! for robustness, check this as well
         print *, 'ERROR: min table depth < min vzmodel depth'
@@ -1566,10 +1567,10 @@ program growclust
    CrmsS = sqrt(CrmsS/float(nsC))
    
    ! compute mean and median residuals
-   call MEAN(resP(1:jjP), jjP, resPmean)
-   !call MEDIAN(resP(1:jjP), jjP, resPmed) ! removed for speed (sorting really large arrays is a chore)
-   call MEAN(resS(1:jjS), jjS, resSmean)
-   !call MEDIAN(resS(1:jjS), jjS, resSmed) ! removed for speed (sorting really large arrays is a chore)
+   !call MEAN(resP(1:jjP), jjP, resPmean) ZR EDIT
+   call MEDIAN(abs(resP(1:jjP)), jjP, resPmean) ! removed for speed (sorting really large arrays is a chore)
+   !call MEAN(resS(1:jjS), jjS, resSmean)
+   call MEDIAN(abs(resS(1:jjS)), jjS, resSmean) ! removed for speed (sorting really large arrays is a chore)
    
    
    ! now loop over events and convert residual sum to rms
