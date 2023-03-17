@@ -26,29 +26,35 @@
    MODULE grow_params
    
    ! ----------- Array size parameters ----------------------------------
-   integer, parameter :: nsta0=1000            !max number of stations
-   integer, parameter :: nq0=100000           !max number of quakes
-   integer, parameter :: npair0=2000000        !max total number of event pairs
-   integer, parameter :: ntmax=100000           !maximum number of trees (clusters), normally should be same as nq0
-   integer, parameter :: nbmax=100000           !max number of events (branches) per tree, should be of order nq0
+   integer, parameter :: nsta0=3000            !max number of stations
+   integer, parameter :: nq0=500000           !max number of quakes
+   integer, parameter :: npair0=50000000        !max total number of event pairs
+   integer, parameter :: ntmax=370000           !maximum number of trees (clusters), normally should be same as nq0
+   integer, parameter :: nbmax=370000           !max number of events (branches) per tree, should be of order nq0
    integer, parameter :: n0=1000              !max number of differential times for each event pair
-   integer, parameter :: ndif0=15000000        !max total number of differential times
+   integer, parameter :: ndif0=600000000        !max total number of differential times
    integer, parameter :: n08 = 10000          !max number of diff. times for 10 event pairs
    integer, parameter :: maxboot = 100        ! max number of bootstrap resamples
-   integer, parameter :: maxevid = 100000000 ! maximum event id number
+   integer, parameter :: maxevid = 120000000 ! maximum event id number
 
     ! ------- GrowClust algorithm control parameters -------------------------------
-   real, parameter    :: distmax = 5.0          ! maximum catalog(input) distance to join clusters (km)
-   real, parameter    :: distmax2 = 3.0         ! maximum relocated distance to join clusters (km)
+   real, parameter    :: conparam = 1e-20        ! minimum connection fraction to join clusters (usually a small number is fine)
+   !real, parameter    :: distmax = 5.0          ! maximum catalog(input) distance to join clusters (km)
+   real, parameter    :: distmax = 10.0          ! maximum catalog(input) distance to join clusters (km)
+   !real, parameter    :: distmax2 = 3.0         ! maximum relocated distance to join clusters (km)
+   real, parameter    :: distmax2 = 10.0         ! maximum relocated distance to join clusters (km)
    integer, parameter :: nclustshiftmin = 1    ! minimum number of events in cluster to apply cluster shift test
-   real, parameter    :: hshiftmax = 2.0        ! maximum permitted horizontal cluster shifts (km)
-   real, parameter    :: vshiftmax = 2.0        ! maximum permitted vertical cluster shifts (km)
-   real, parameter    :: rmedmax = 0.05         ! maximum median absolute tdif residual to join clusters
-   
+   real, parameter    :: hshiftmax = 10.0        ! maximum permitted horizontal cluster shifts (km)
+   !real, parameter    :: hshiftmax = 2.0        ! maximum permitted horizontal cluster shifts (km)
+   !real, parameter    :: vshiftmax = 2.0        ! maximum permitted vertical cluster shifts (km)
+   real, parameter    :: vshiftmax = 10.0        ! maximum permitted vertical cluster shifts (km)
+   !real, parameter    :: rmedmax = 0.05         ! maximum median absolute tdif residual to join clusters
+   real, parameter    :: rmedmax = 0.10         ! maximum median absolute tdif residual to join clusters
+
    ! ------- Relative Relocation subroutine parameters -------------
    real, parameter    :: boxwid = 3. ! initial "shrinking-box" width (km)
    integer, parameter :: nit = 15 ! number of iterations
-   integer, parameter :: irelonorm = 1 ! relocation norm (L1 norm=1, L2 norm=2, 3=robust L2)
+   integer, parameter :: irelonorm = 3 ! relocation norm (L1 norm=1, L2 norm=2, 3=robust L2)
    real, parameter    :: tdifmax = 30. ! maximum differential time value allowed (for error-checking on xcor data input)
    
    ! -------- Bootstrap resampling parameters -------------------

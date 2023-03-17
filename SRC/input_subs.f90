@@ -106,7 +106,9 @@
    endif
    
    ! check travel-time table: dep and del
-   if ((tt_dep1 < 0.0) .or. (tt_dep2 < tt_dep1) .or. (tt_dep3 > tt_dep2)) then
+   ! ZR change below
+   !if ((tt_dep1 < 0.0) .or. (tt_dep2 < tt_dep1) .or. (tt_dep3 > tt_dep2)) then
+   if ((tt_dep2 < tt_dep1) .or. (tt_dep3 > tt_dep2)) then
      print *, 'Input error (travel-time table param.) : min_dep, max_dep, d_dep'
      print *, tt_dep1, tt_dep2, tt_dep3
      input_ok = 0
