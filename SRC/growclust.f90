@@ -1415,123 +1415,123 @@ program growclust
    nsC = 0
    jjP = 0
    jjS = 0
-   ! loop over event pairs, and compute predicted travel times for all picks
-        !(WILL NEED TO MODIFY IF WE DO THIS FOR BOOTSTRAP ITERATIONS)       
-   do ip = 1, npair
+   ! ! loop over event pairs, and compute predicted travel times for all picks
+   !      !(WILL NEED TO MODIFY IF WE DO THIS FOR BOOTSTRAP ITERATIONS)       
+   ! do ip = 1, npair
       
-      ! get index1 and index2 for this pair from unresampled data 
-      ix1 = index100(ip)
-      ix2 = index200(ip)
+   !    ! get index1 and index2 for this pair from unresampled data 
+   !    ix1 = index100(ip)
+   !    ix2 = index200(ip)
       
-      if (ix2 > 0 .and. ix1 > 0) then ! check for "empty" pair 
+   !    if (ix2 > 0 .and. ix1 > 0) then ! check for "empty" pair 
       
-      ! get sequential quake numbers
-      iq1 = iqq1(ip)
-      iq2 = iqq2(ip)
+   !    ! get sequential quake numbers
+   !    iq1 = iqq1(ip)
+   !    iq2 = iqq2(ip)
       
-      ! get cluster/tree numbers
-      itree1 = itreeqR(iq1)
-      itree2 = itreeqR(iq2)
+   !    ! get cluster/tree numbers
+   !    itree1 = itreeqR(iq1)
+   !    itree2 = itreeqR(iq2)
       
-      ! compute predicted travel times 
-        cosqlat = cos( 0.5*(qlat(iq1)+qlat(iq2)) / degrad )
-        npickgoodP = 0 ! counts number of good picks
-        npickgoodS = 0
-        prmsP = 0.0 ! set RMS for pair to zero, initially
-        prmsS = 0.0
-        do k = ix1, ix2
+   !    ! compute predicted travel times 
+   !      cosqlat = cos( 0.5*(qlat(iq1)+qlat(iq2)) / degrad )
+   !      npickgoodP = 0 ! counts number of good picks
+   !      npickgoodS = 0
+   !      prmsP = 0.0 ! set RMS for pair to zero, initially
+   !      prmsS = 0.0
+   !      do k = ix1, ix2
             
-            ! predicted travel time from event1 to station
-            dy = qlat(iq1) - slat(k)
-            dx = (qlon(iq1) - slon(k))*cosqlat
-            distance = sqrt(dx**2 + dy**2)*degkm
-            call GET_TT_FAST(ttab, deltab, deptab, ndel, ndep, &
-                 ipp(k), distance, qdep(iq1), tsec1, iflag)
+   !          ! predicted travel time from event1 to station
+   !          dy = qlat(iq1) - slat(k)
+   !          dx = (qlon(iq1) - slon(k))*cosqlat
+   !          distance = sqrt(dx**2 + dy**2)*degkm
+   !          call GET_TT_FAST(ttab, deltab, deptab, ndel, ndep, &
+   !               ipp(k), distance, qdep(iq1), tsec1, iflag)
             
-            ! predicted travel time from event2 to station
-            dy = qlat(iq2) - slat(k)
-            dx = (qlon(iq2) - slon(k))*cosqlat
-            distance = sqrt(dx**2 + dy**2)*degkm
-            call GET_TT_FAST(ttab, deltab, deptab, ndel, ndep, &
-                  ipp(k), distance, qdep(iq2), tsec2, iflag)
+   !          ! predicted travel time from event2 to station
+   !          dy = qlat(iq2) - slat(k)
+   !          dx = (qlon(iq2) - slon(k))*cosqlat
+   !          distance = sqrt(dx**2 + dy**2)*degkm
+   !          call GET_TT_FAST(ttab, deltab, deptab, ndel, ndep, &
+   !                ipp(k), distance, qdep(iq2), tsec2, iflag)
 
-            ! predicted differential time (otime adjustment taken care of below)    
-            tdif_pred(k) = tsec2 - tsec1 
+   !          ! predicted differential time (otime adjustment taken care of below)    
+   !          tdif_pred(k) = tsec2 - tsec1 
             
-            ! check to see if this is a "good" pick
-            if (dist(k) <= delmax .and. rxcor(k) >= rmin) then
+   !          ! check to see if this is a "good" pick
+   !          if (dist(k) <= delmax .and. rxcor(k) >= rmin) then
             
-              if (ipp(k) == 1) then ! P-phase
+   !            if (ipp(k) == 1) then ! P-phase
                 
-                ! store residual in P-residual array
-                jjP = jjP + 1
-                resP(jjP) = tdif(k)-(qtim(iq2)-qtim(iq1))-tdif_pred(k) ! otime-adjusted (08/2021)
+   !              ! store residual in P-residual array
+   !              jjP = jjP + 1
+   !              resP(jjP) = tdif(k)-(qtim(iq2)-qtim(iq1))-tdif_pred(k) ! otime-adjusted (08/2021)
                 
-                npickgoodP = npickgoodP + 1  ! increment npickgood
-                prmsP = prmsP + (resP(jjP))**2 ! increment residual sum for the pair
+   !              npickgoodP = npickgoodP + 1  ! increment npickgood
+   !              prmsP = prmsP + (resP(jjP))**2 ! increment residual sum for the pair
                 
                 
-              else                  ! S-phase
+   !            else                  ! S-phase
                 
-                ! store residual in P-residual array
-                jjS = jjS + 1
-                resS(jjS) = tdif(k)-(qtim(iq2)-qtim(iq1))-tdif_pred(k) ! otime-adjusted (08/2021)
+   !              ! store residual in P-residual array
+   !              jjS = jjS + 1
+   !              resS(jjS) = tdif(k)-(qtim(iq2)-qtim(iq1))-tdif_pred(k) ! otime-adjusted (08/2021)
                 
-                npickgoodS = npickgoodS + 1  ! increment npickgood
-                prmsS = prmsS + (resS(jjS))**2 ! increment residual sum for the pair
+   !              npickgoodS = npickgoodS + 1  ! increment npickgood
+   !              prmsS = prmsS + (resS(jjS))**2 ! increment residual sum for the pair
                 
-              endif
+   !            endif
                 
-            endif
+   !          endif
             
-          enddo
+   !        enddo
         
-        ! update rms, npair, ndiff
-        if ((itree1 == itree2) .and. (npickgoodP + npickgoodS > 0) ) then !--------
+   !      ! update rms, npair, ndiff
+   !      if ((itree1 == itree2) .and. (npickgoodP + npickgoodS > 0) ) then !--------
         
-            ! first, increment npair
-            qnpair(iq1) = qnpair(iq1) + 1
-            qnpair(iq2) = qnpair(iq2) + 1
-            npairC = npairC + 1
+   !          ! first, increment npair
+   !          qnpair(iq1) = qnpair(iq1) + 1
+   !          qnpair(iq2) = qnpair(iq2) + 1
+   !          npairC = npairC + 1
         
-            ! P-phase
-            if (npickgoodP > 0) then
+   !          ! P-phase
+   !          if (npickgoodP > 0) then
             
-                ! increment residual sum for each event
-                qrmsP(iq1) = qrmsP(iq1) + prmsP
-                qrmsP(iq2) = qrmsP(iq2) + prmsP
+   !              ! increment residual sum for each event
+   !              qrmsP(iq1) = qrmsP(iq1) + prmsP
+   !              qrmsP(iq2) = qrmsP(iq2) + prmsP
                 
-                ! increment qndiff for each event
-                qndiffP(iq1) = qndiffP(iq1) + npickgoodP
-                qndiffP(iq2) = qndiffP(iq2) + npickgoodP
+   !              ! increment qndiff for each event
+   !              qndiffP(iq1) = qndiffP(iq1) + npickgoodP
+   !              qndiffP(iq2) = qndiffP(iq2) + npickgoodP
                 
-                ! increment running totals
-                CrmsP = CrmsP + prmsP
-                npC = npC + npickgoodP
+   !              ! increment running totals
+   !              CrmsP = CrmsP + prmsP
+   !              npC = npC + npickgoodP
                 
-            endif
+   !          endif
             
-            ! S-phase
-            if (npickgoodS > 0) then
+   !          ! S-phase
+   !          if (npickgoodS > 0) then
                 
-                ! increment residual sum for each event
-                qrmsS(iq1) = qrmsS(iq1) + prmsS
-                qrmsS(iq2) = qrmsS(iq2) + prmsS
+   !              ! increment residual sum for each event
+   !              qrmsS(iq1) = qrmsS(iq1) + prmsS
+   !              qrmsS(iq2) = qrmsS(iq2) + prmsS
                 
-                ! increment qndiff for each event
-                qndiffS(iq1) = qndiffS(iq1) + npickgoodS
-                qndiffS(iq2) = qndiffS(iq2) + npickgoodS
+   !              ! increment qndiff for each event
+   !              qndiffS(iq1) = qndiffS(iq1) + npickgoodS
+   !              qndiffS(iq2) = qndiffS(iq2) + npickgoodS
                 
-                ! increment running totals
-                CrmsS = CrmsS + prmsS
-                nsC = nsC + npickgoodS
+   !              ! increment running totals
+   !              CrmsS = CrmsS + prmsS
+   !              nsC = nsC + npickgoodS
                 
-            endif   
-        endif !----------------------------------------------------------------
+   !          endif   
+   !      endif !----------------------------------------------------------------
       
-      endif
+   !    endif
    
-   enddo
+   ! enddo
    
     !SSE running totals: convert SSE to RMS
    CrmsP = sqrt(CrmsP/float(npC))
